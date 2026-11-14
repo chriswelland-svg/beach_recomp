@@ -95,8 +95,13 @@ jobs:
   windows:
     name: Windows (zip, llvm-mingw)
     # A published release must carry all three packages, so the tag build runs
-    # Windows too; ordinary pushes stay Linux+macOS and leave it manual.
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.windows)
+    # Windows too. Ordinary pushes now run it as well: leaving it opt-in meant
+    # every push needed a second manual `workflow_dispatch -f windows=true` to
+    # know whether Windows still built, which is exactly the ceremony this
+    # workflow exists to remove. The dispatch input stays as an escape hatch so
+    # the job can be skipped by pushing with [skip windows] style workflows or
+    # simply by cancelling the run.
+    if: github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.windows)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
