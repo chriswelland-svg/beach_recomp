@@ -177,7 +177,26 @@ It is deliberately **not pushed**: `lib/DolRecomp`'s only remote is
 without a decision. Once the rebase in decision 2 is made, the natural move is
 to push it to a fork as a proper branch.
 
-### 3. macOS
+### 3. Four different DolRecomp revisions are in play
+
+After the vendor merge, nothing pins the same DolRecomp twice:
+
+| Where | Revision | Notes |
+|---|---|---|
+| `lib/DolRecomp` (root, the Makefile's `dolrecomp`) | `1bec355` **+ WIP** | `0 ahead / 21 behind` upstream; carries the perf work |
+| `lib/DolRecomp` pin recorded in `beach_recomp` | `1bec355` | matches the checkout |
+| `vendor/dolphin` **gitlink** (RecompCore's `DolRecomp`) | `71ce7f9` | upstream's PR #39 repin, merged in via `4582fda` |
+| `vendor/dolphin/DolRecomp` **checkout** | `1bec355` | clean, and 21 behind its own gitlink |
+| upstream `ExpansionPak/DolRecomp` `HEAD` | `02e27ac` | |
+
+The `vendor/dolphin` gitlink/checkout mismatch is the trap: the tree shows
+` M DolRecomp`, and the obvious fix — `git submodule update` — would move the
+checkout to `71ce7f9`, rebuild the vendored recompiler, change its sha, and so
+change the module cache key. That means regeneration, new object paths, and an
+invalidated `.gcda` set — i.e. the same forced PGO retrain as decision 1.
+**Do not "clean up" that dirty flag casually.** It is left as-is on purpose.
+
+### 4. macOS
 
 Report-only, untested. `PlatformMacos.mm` has zero
 `NotifyHotkey`/`SetKeysym` calls; F-keys arrive via the native `NSMenu`.
