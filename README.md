@@ -84,6 +84,9 @@ or `make check BACKEND=llvm` to validate LLVM 19/20 as well.
 > [!NOTE]
 > `lib/ModernGekko` vendors a large chunk of Dolphin's dependency tree (SDL, fmt, imgui, Vulkan headers, etc.), so the first submodule sync takes a while and pulls a few hundred MB.
 
+> [!TIP]
+> Maintainers: the fork/remote layout, the push order between the three repos, `tools/sync-chain.sh` and the open submodule decisions are documented in [REPO-FLOW.md](REPO-FLOW.md).
+
 ## Recompile and Run
 
 Bring your own legally-owned ISO, no game data is included in or downloaded by this repository. Works with any GameCube or Wii disc; there is no default game, so `ISO=` (or an already-extracted `GAME=`) is required. Point `ISO` at a dump and run:
