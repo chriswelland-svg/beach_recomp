@@ -158,6 +158,25 @@ would need the WIP re-applied against the rewritten `pipeline.c`.
 
 Left unmerged deliberately — touching that WIP is the owner's call.
 
+**It is no longer only on this disk.** The 164-line WIP existed purely as
+uncommitted working-tree changes — no commit, no remote, nothing but the
+checkout. It is now also a real object on a local branch:
+
+```
+dolrecomp-wip-20261114 -> 389b358   (parent: 1bec355)
+```
+
+Created with `git stash create` + `git branch`, which snapshots the worktree
+into a commit **without touching it**: the `git diff` sha256 was byte-identical
+before and after (`7dfcbcaf…`), and `git status` still shows the same four
+modified files with no stash entry added. `git diff 1bec355
+dolrecomp-wip-20261114` reproduces the working diff exactly.
+
+It is deliberately **not pushed**: `lib/DolRecomp`'s only remote is
+`ExpansionPak/DolRecomp`, so publishing it would make uncommitted work public
+without a decision. Once the rebase in decision 2 is made, the natural move is
+to push it to a fork as a proper branch.
+
 ### 3. macOS
 
 Report-only, untested. `PlatformMacos.mm` has zero
