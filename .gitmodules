@@ -3,4 +3,5 @@
 	url = https://github.com/kobayashi90/ModernGekko.git
 [submodule "lib/DolRecomp"]
 	path = lib/DolRecomp
-	url = https://github.com/ExpansionPak/DolRecomp.git
+	url = https://github.com/kobayashi90/DolRecomp.git
+	branch = beach-spikers-perf
