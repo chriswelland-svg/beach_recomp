@@ -9,10 +9,10 @@ Each repo pins the one below it with a gitlink, so a change at the bottom has
 to travel upward in order:
 
 ```
-kobayashi90/beach_recomp          pins  lib/ModernGekko
+kobayashi90/beach_recomp          pins  lib/ModernGekko  and  lib/DolRecomp
 kobayashi90/ModernGekko           pins  vendor/dolphin
-kobayashi90/RecompCore            -- leaf (the vendor/dolphin tree)
-lib/DolRecomp                     -- leaf, pinned directly by beach_recomp
+kobayashi90/RecompCore            pins  DolRecomp
+kobayashi90/DolRecomp             -- leaf (perf fork, branch beach-spikers-perf)
 ```
 
 Get the order wrong and CI checks out a commit no remote has yet and fails.
@@ -24,7 +24,14 @@ Get the order wrong and CI checks out a commit no remote has yet and fails.
 | beach_recomp | **kobayashi90/beach_recomp** | `upstream` = ExpansionPak/ModernGekko-Template | yes (`origin`) |
 | ModernGekko | ExpansionPak/ModernGekko | `fork` = **kobayashi90/ModernGekko** | `fork` only |
 | vendor/dolphin (RecompCore) | ExpansionPak/RecompCore | `fork` = **kobayashi90/RecompCore** | `fork` only |
-| lib/DolRecomp | ExpansionPak/DolRecomp | *(no fork remote)* | never |
+| lib/DolRecomp | **kobayashi90/DolRecomp** | fork of ExpansionPak/DolRecomp | yes (`origin`) |
+| lib/DolRecomp (publish clone) | **kobayashi90/DolRecomp** | `local` = `lib/DolRecomp` | yes (`origin`) |
+
+`lib/DolRecomp`'s `origin` is the fork as of the perf-work publish, so it is
+pushable like beach_recomp. In practice its `beach-spikers-perf` branch is
+pushed from the scratch clone at `extern/dolrecomp-publish` (gitignored under
+`extern/`), which carries the merge of the WIP onto upstream history; the
+worktree in `lib/ModernGekko/..` stays a plain checkout of the pinned commit.
 
 In the submodule repos `origin` is upstream, not us — pushing `origin` there
 would write to ExpansionPak. `tools/sync-chain.sh` asserts every push target
@@ -92,7 +99,20 @@ Check for shallowness first: `test -f "$(git rev-parse --git-dir)/shallow"`.
 
 ## Open decisions
 
-### 1. Two DolRecomp copies — `make recompile` uses the wrong one
+### 1. ~~Two DolRecomp copies~~ — RESOLVED: one source of truth, chained by default
+
+**Resolved.** `lib/DolRecomp` and `vendor/dolphin/DolRecomp` now both resolve
+to `kobayashi90/DolRecomp` branch `beach-spikers-perf` (`fef6666`, based on
+`71ce7f9` — the revision the shipped runtime is built against), so the
+recompiler players build with is the one carrying call chaining, lazy PC and
+forced-inline FP helpers. The port additionally exports
+`DOLRECOMP_CHAIN_CALLS=1` (opt out with `=0`) and folds the effective value
+into the module cache identity, which it never did before.
+
+The diagnosis below is kept because it explains why the numbers in
+PERFORMANCE.md disagreed with what players actually got.
+
+**Original finding:**
 
 There are two independent DolRecomp checkouts, and they are not equivalent:
 
@@ -140,7 +160,15 @@ the 1.000 build. Two ways out, both needing a decision:
 * move the perf WIP into `vendor/dolphin/DolRecomp` so the two copies stop
   diverging in the first place.
 
-### 2. DolRecomp upstream sync
+### 2. DolRecomp upstream sync — re-scoped after the fork publish
+
+**Now:** the pin sits on `kobayashi90/DolRecomp` branch `beach-spikers-perf`,
+based on `71ce7f9`, so it is **12 behind** `02e27ac` rather than 21, and it is
+a fork branch rather than a fast-forward. Catching up is the same decision as
+in section 3 — rebase the WIP onto the rewritten `pipeline.c` and verify the
+module side — so the two sections resolve together.
+
+**Original finding (at `1bec355`):**
 
 `lib/DolRecomp` is a pure fast-forward: **0 ahead / 21 behind** upstream
 (`1bec355` → `02e27ac`), and the merge is clean against committed trees. Only
@@ -177,7 +205,25 @@ It is deliberately **not pushed**: `lib/DolRecomp`'s only remote is
 without a decision. Once the rebase in decision 2 is made, the natural move is
 to push it to a fork as a proper branch.
 
-### 3. Four different DolRecomp revisions are in play
+### 3. ~~Four different DolRecomp revisions~~ — RESOLVED: all pins collapse to one
+
+**Resolved.** The checkout, `beach_recomp`'s gitlink, `vendor/dolphin`'s
+gitlink and `vendor/dolphin`'s checkout all read **`fef6666`**, so the
+` M DolRecomp` dirty flag is gone and there is nothing left to keep in step by
+hand. The only remaining difference is upstream itself:
+
+| Where | Revision |
+|---|---|
+| every local pin (checkout + both gitlinks) | **`fef6666`** = `71ce7f9` + perf WIP |
+| `ExpansionPak/DolRecomp` `HEAD` | `02e27ac` (12 commits ahead of `71ce7f9`) |
+
+**Still open:** catching up to `02e27ac` means rebasing the WIP onto a tree
+that rewrites `native_module.c` (+270), `native_state.c` (+105) and adds
+`patch_abi.h`/`patch_version.h` — the C-backend module side the runtime
+consumes — so it needs the same compatibility check the `71ce7f9` choice
+avoided. Do not "clean up" the gap casually.
+
+**Original finding (all four differed, and the mismatch was live):**
 
 After the vendor merge, nothing pins the same DolRecomp twice:
 
