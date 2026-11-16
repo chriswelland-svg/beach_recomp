@@ -947,6 +947,53 @@ missing on this checkout, so every `PERF=1` run silently produced no counters
 with `gcc -O2 -o tools/perfcount tools/perfcount.c` — `perf_event_paranoid=2`
 on this box allows user-space counters.
 
+## 2026-11-16: what 1.0.8 shipped, and what the module fix is worth
+
+1.0.8 (Nov 12) shipped a module with none of the measured levers: the
+single-CPU runtime (the dual-core fix landed Nov 13, one day after the
+release), the vendored DolRecomp — whose `emit_set_chunk_table` has **no
+caller at all**, so chaining never ran for any player — no lazy PC, no
+forced-inline FP helpers, and an unpruned dispatch switch.
+
+Two modules were built to price the *module* side of that gap. Same DOL, same
+gcc, same flags (`-O2`, no LTO), differing only in recompiler and pruning:
+
+| | control (1.0.8 world) | P1+P3 |
+|---|---|---|
+| dispatch cases | 318,541 | **77,790** (−75.6 %) |
+| chained call sites | 0 files | **72 files** |
+| `.so` size | 55,477,024 B | **51,484,400 B** (−7.2 %) |
+
+The control was built from a self-contained "old world" (clean `71ce7f9`
+recompiler beside the port, `module-template/` **without** the prune assets) so
+the port resolved the faithful 1.0.8 toolchain rather than the current one.
+
+`tools/ab_load.sh ctl108 <control> p1p3 <new> 3 110 2`; ambient 4.31 → 8.38,
+every run over the 82 Mcycles budget because the box was contended (see the
+caveat below):
+
+| round | ctl108 mean / p90 (load) | p1p3 mean / p90 (load) |
+|---|---|---|
+| 1 | 120.82 / 167.67 (6.49) | 106.13 / 159.96 (8.59) |
+| 2 | 116.47 / 175.35 (8.97) | 103.13 / 148.52 (9.36) |
+| 3 | 117.82 / 155.50 (8.36) | 103.10 / 138.97 (7.88) |
+| **mean** | **118.37 / 166.17** (7.94) | **104.12 / 149.15** (8.61) |
+
+**−12.0 % mean Mcycles/frame, −10.2 % at p90**, winning 3/3 rounds while
+carrying *more* ambient load on average (8.61 vs 7.94) — so the figure is
+conservative rather than flattering.
+
+Caveats, stated because the numbers will be read later:
+
+* **Absolute values are not comparable to anything else in this file.** Those
+  runs were taken at load ~1; this one ran at load 4–9 with the desktop's own
+  electron/MobaXterm/wineserver/squidify load present, which is why every run
+  reports `budget over`.
+* This prices the **module only**. The single-CPU runtime is a separate,
+  already-committed fix, and PGO remains unshipped — both sit on top of this.
+* Two brief `padtest` compiles ran during round 1; the interleaved design
+  averages that out, but it is disclosed rather than hidden.
+
 ## Remaining levers, by expected value
 
 Done: **PGO + `-O3` for the module** was the big one (0.81 → 0.995).
