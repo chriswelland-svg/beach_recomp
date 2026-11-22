@@ -1,6 +1,7 @@
 [submodule "lib/ModernGekko"]
 	path = lib/ModernGekko
-	url = https://github.com/kobayashi90/ModernGekko.git
+	url = https://github.com/chriswelland-svg/ModernGekko.git
+	branch = beach-spikers-controllers
 [submodule "lib/DolRecomp"]
 	path = lib/DolRecomp
 	url = https://github.com/kobayashi90/DolRecomp.git

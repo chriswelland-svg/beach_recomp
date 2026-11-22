@@ -55,6 +55,7 @@ jobs:
           -DMODERNGEKKO_LAUNCHER_OUTPUT_NAME="Beach Spikers"
           -DMODERNGEKKO_APP_ID="io.github.beachspikers"
           -DMODERNGEKKO_DEFAULT_WINDOW_TITLE="Beach Spikers"
+          -DMODERNGEKKO_GAMECUBE_CONTROLLERS=ON
           -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Build ModernGekko
@@ -161,7 +162,8 @@ jobs:
             -DMODERNGEKKO_FRONTEND_NAME="Beach Spikers" `
             -DMODERNGEKKO_LAUNCHER_OUTPUT_NAME="Beach Spikers" `
             -DMODERNGEKKO_APP_ID="io.github.beachspikers" `
-            -DMODERNGEKKO_DEFAULT_WINDOW_TITLE="Beach Spikers"
+            -DMODERNGEKKO_DEFAULT_WINDOW_TITLE="Beach Spikers" `
+            -DMODERNGEKKO_GAMECUBE_CONTROLLERS=ON
 
       - name: Build ModernGekko
         run: cmake --build lib/ModernGekko/build --parallel
@@ -330,6 +332,7 @@ jobs:
           -DMODERNGEKKO_LAUNCHER_OUTPUT_NAME="Beach Spikers"
           -DMODERNGEKKO_APP_ID="io.github.beachspikers"
           -DMODERNGEKKO_DEFAULT_WINDOW_TITLE="Beach Spikers"
+          -DMODERNGEKKO_GAMECUBE_CONTROLLERS=ON
 
       - name: Build ModernGekko
         run: cmake --build lib/ModernGekko/build --parallel $(sysctl -n hw.ncpu)
