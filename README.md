@@ -205,6 +205,20 @@ Module builds are cached by DOL hash *and* toolchain identity, so switching `TOO
 
 Bindings come from `Config/GCPadNew.ini` / `Config/WiimoteNew.ini` in ModernGekko's user directory (`~/.local/share/moderngekko/Config/` by default). Without one, pad input silently does nothing. You can write one by hand (Dolphin's ini format and key names are stable and documented by the project itself) or let the F1 menu's Input tab pick a device for each port, which generates the ini for you.
 
+## Online Play (up to 4 players)
+
+**Play online...** in the launcher opens a short wizard: your name, then
+**Host a game** or **Join a friend's game** (with the address the host's lobby
+shows). In the lobby, the host sees the address to give friends, seats players
+on the two teams (ports 1-2 against ports 3-4), and can **Shuffle teams** or
+**Swap sides** before each match. Closing the game window on any computer brings
+everyone back to the lobby to change teams. Everyone needs the same release and
+their own USA disc set up in it.
+
+Step by step for players, including playing from different homes
+(Tailscale or port forwarding) and what each error means:
+**[ONLINE-PLAY.md](ONLINE-PLAY.md)**.
+
 ## In-game Settings Menu (F1)
 
 F1 opens an overlay menu; ESC closes it. Emulation pauses while it is open, and
