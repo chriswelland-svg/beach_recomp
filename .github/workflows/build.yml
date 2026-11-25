@@ -13,8 +13,10 @@ on:
         description: "Also build the Windows package (llvm-mingw, experimental)"
         type: boolean
         default: false
+  # A release published on the GitHub website. Not `created`: that also fires
+  # when a draft is saved, before its tag exists, and the checkout then fails.
   release:
-    types: [created]
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -383,13 +385,22 @@ jobs:
           path: dist/*
           if-no-files-found: warn
 
-  # Publish a release from a tag push: `git tag test-YYYY-MM-DD && git push origin
-  # test-YYYY-MM-DD`. Runs only after all three packages built, attaches exactly
-  # those three files, and uses packaging/RELEASE_NOTES.md (as of the tagged
-  # commit) as the description. test-* tags become pre-releases.
+  # Attach the three packages to a release. Two ways in:
+  #   * GitHub website: Releases -> Draft a new release -> new tag (e.g.
+  #     test-YYYY-MM-DD) on main -> Publish. The packages are attached when the
+  #     build finishes. A description or title left empty is filled from
+  #     packaging/RELEASE_NOTES.md / the tag; anything typed is kept.
+  #   * git: `git tag test-YYYY-MM-DD && git push origin test-YYYY-MM-DD`
+  #     creates the release here (test-* tags as pre-releases).
+  # Publishing on the website also creates the tag, which fires `push` as well
+  # as `release`. Both runs share a concurrency group, so the newer one cancels
+  # the older, and this job copes with either event finding the release made
+  # or not. Nothing is attached unless all three platforms built.
   release:
     name: Publish release
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: >-
+      startsWith(github.ref, 'refs/tags/') &&
+      (github.event_name == 'push' || github.event_name == 'release')
     needs: [linux, windows, macos]
     runs-on: ubuntu-latest
     permissions:
@@ -402,10 +413,10 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create release
+      - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
         run: |
           set -euo pipefail
           mapfile -t files < <(find artifacts -type f \( -name '*.AppImage' \
@@ -419,5 +430,21 @@ jobs:
             test-*) title="Beach Spikers — test build (${TAG#test-})"; pre=--prerelease ;;
             *)      title="Beach Spikers ${TAG}"; pre= ;;
           esac
-          gh release create "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag \
-            $pre --title "$title" --notes-file packaging/RELEASE_NOTES.md
+          repo=(--repo "$GITHUB_REPOSITORY")
+          if gh release view "$TAG" "${repo[@]}" --json tagName >/dev/null 2>&1; then
+            # Made on the website: attach the packages (replacing same-named
+            # ones from an earlier attempt) and fill only what was left empty.
+            gh release upload "$TAG" "${files[@]}" "${repo[@]}" --clobber
+            body=$(gh release view "$TAG" "${repo[@]}" --json body --jq .body)
+            name=$(gh release view "$TAG" "${repo[@]}" --json name --jq .name)
+            edit=()
+            [ -n "${body//[[:space:]]/}" ] || edit+=(--notes-file packaging/RELEASE_NOTES.md)
+            [ -n "${name//[[:space:]]/}" ] || edit+=(--title "$title")
+            if [ "${#edit[@]}" -gt 0 ]; then
+              gh release edit "$TAG" "${repo[@]}" "${edit[@]}"
+            fi
+          else
+            gh release create "$TAG" "${files[@]}" "${repo[@]}" --verify-tag \
+              $pre --title "$title" --notes-file packaging/RELEASE_NOTES.md
+          fi
+          echo "published: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
