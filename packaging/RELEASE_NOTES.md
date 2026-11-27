@@ -21,6 +21,8 @@ database.
   If an earlier build failed for you, download this one, unzip it, and run it again.
 - **If a build ever fails, the window now shows why**, so you can send that text along
   with your report.
+- **F1 menu with the OpenGL graphics backend:** opening it showed
+  `Condition: buffer_ptr != nullptr ... OGLTexture.cpp` and then closed the game. Fixed.
 - **Online play for up to 4 players** (USA disc): **Play online...** in the launcher. See
   [ONLINE-PLAY.md](https://github.com/chriswelland-svg/beach_recomp/blob/main/ONLINE-PLAY.md)
   for the step-by-step guide. Everyone in a game must use the same release.
