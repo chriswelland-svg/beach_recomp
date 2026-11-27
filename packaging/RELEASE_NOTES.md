@@ -12,10 +12,15 @@ call chaining and dispatch pruning in the module it builds, and an embedded game
 database.
 
 ### New in this build
-- **Windows: the game module now builds without your own CMake.** Earlier Windows
-  downloads stopped right after the recompiler step with
-  `failed to launch command: Windows error 2`, because the bundled CMake was never found.
-  If that happened to you, download this build, unzip it, and run it again.
+- **Windows: the game module build is fixed.** Earlier Windows downloads could not
+  build the game on a normal PC. They stopped with
+  `failed to launch command: Windows error 2` (the bundled CMake was never found), or
+  with `The C compiler ... is not able to compile a simple test program` (the build
+  folder's paths were longer than Windows allows). Both are fixed: no extra software
+  and no Windows settings are needed.
+  If an earlier build failed for you, download this one, unzip it, and run it again.
+- **If a build ever fails, the window now shows why**, so you can send that text along
+  with your report.
 - **Online play for up to 4 players** (USA disc): **Play online...** in the launcher. See
   [ONLINE-PLAY.md](https://github.com/chriswelland-svg/beach_recomp/blob/main/ONLINE-PLAY.md)
   for the step-by-step guide. Everyone in a game must use the same release.
