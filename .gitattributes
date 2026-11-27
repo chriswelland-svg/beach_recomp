@@ -1,0 +1,4 @@
+# Windows batch files need CRLF line endings (cmd.exe label lookup breaks on
+# LF-only files); store them byte-for-byte.
+*.cmd -text
+*.bat -text
